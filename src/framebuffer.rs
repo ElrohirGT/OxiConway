@@ -91,7 +91,7 @@ impl Framebuffer {
         let x = x.round() as usize;
         let y = y.round() as usize;
 
-        match (x <= *width, y <= *height) {
+        match (x < *width, y < *height) {
             (false, _) => Err(PaintPointErrors::XTooLarge),
             (_, false) => Err(PaintPointErrors::YTooLarge),
             _ => {
