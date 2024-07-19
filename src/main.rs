@@ -69,7 +69,7 @@ fn main() {
 
         // Update the model
         if frame_count >= frame_update_timer && frame_count % frame_update_timer == 0 {
-            data = update(data, HashSet::new());
+            data = update(data);
         }
 
         // Update the window with the framebuffer contents
@@ -82,31 +82,61 @@ fn main() {
     }
 }
 
-fn update(data: Model, evaluated_points: HashSet<Cell>) -> Model {
-    let mut live_cells = HashSet::new();
-    let framebuffer_dimensions = data.framebuffer_dimensions;
-    for live_cell in data.live_cells.iter() {
-        if evaluated_points.contains(live_cell) {
-            continue;
-        }
+fn update(data: Model) -> Model {
+    let Model {
+        live_cells,
+        framebuffer_dimensions,
+    } = data;
+    let mut already_evaluated_cells = HashSet::new();
 
-        let neighbors = get_cell_neighbors(live_cell, &data.framebuffer_dimensions);
-        let alive_neighbors_count = neighbors
-            .iter()
-            .filter(|n| match n {
-                None => false,
-                Some(cell) => data.live_cells.contains(cell),
-            })
-            .count();
-
-        if alive_neighbors_count == 2 || alive_neighbors_count == 3 {
-            live_cells.insert(*live_cell);
-        }
-    }
+    let live_cells = live_cells
+        .iter()
+        .flat_map(|lc| {
+            let mut neighbors = get_cell_neighbors(lc, &data.framebuffer_dimensions);
+            neighbors.append(&mut vec![Some(*lc)]);
+            neighbors
+        })
+        .flatten()
+        .filter_map(|cell| {
+            if already_evaluated_cells.insert(cell) {
+                evaluate_cell(&cell, &live_cells, &framebuffer_dimensions).cloned()
+            } else {
+                None
+            }
+        })
+        .collect();
 
     Model {
         live_cells,
         framebuffer_dimensions,
+    }
+}
+
+fn evaluate_cell<'a>(
+    cell: &'a Cell,
+    live_cells: &HashSet<Cell>,
+    dimensions: &(usize, usize),
+) -> Option<&'a Cell> {
+    let neighbors = get_cell_neighbors(cell, dimensions);
+    let alive_neighbors_count = neighbors
+        .iter()
+        .filter(|n| match n {
+            None => false,
+            Some(cell) => live_cells.contains(cell),
+        })
+        .count();
+
+    let is_alive = live_cells.contains(cell);
+    if is_alive {
+        if alive_neighbors_count == 2 || alive_neighbors_count == 3 {
+            Some(cell)
+        } else {
+            None
+        }
+    } else if alive_neighbors_count == 3 {
+        Some(cell)
+    } else {
+        None
     }
 }
 
