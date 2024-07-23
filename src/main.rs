@@ -30,11 +30,7 @@ fn main() {
     )
     .unwrap();
 
-    // Clear the framebuffer
-    framebuffer.set_background_color(0x333355);
-    framebuffer.clear();
-
-    let frame_delay = std::time::Duration::from_millis(1000 / 60);
+    let frame_delay = std::time::Duration::from_millis(1000 / 120);
     let rle = "72bo85bo$71b3o83b3o$52boboo14bo3bo14boobo45boboo14bo3bo14boobo$51boob
 ooboobo10b3o10boboobooboo43boobooboobo10b3o10boboobooboo$50bobboboboob
 oo8b5o8booboobobobbo41bobbobobooboo8b5o8booboobobobbo$51bo6bo5bo4boo3b
@@ -180,16 +176,14 @@ o$130boo$89boo39bobo$88bobo39bo$90bo$119boo$100boo16boo$101boo17bo$
     let mut data = generate_live_board_cells(rle, &framebuffer_width, &framebuffer_height);
 
     let mut frame_count: u64 = 0;
-    let frame_update_timer: u64 = 2;
+    let frame_update_timer: u64 = 1;
+    framebuffer.set_background_color(0x040b05);
+    framebuffer.set_current_color(0xc35817);
     while window.is_open() {
         // listen to inputs
         if window.is_key_down(Key::Escape) {
             break;
         }
-
-        // Clear the framebuffer
-        framebuffer.set_background_color(0x333355);
-        framebuffer.clear();
 
         // Render
         render(&mut framebuffer, &data);
@@ -360,12 +354,9 @@ fn get_cell_neighbors(cell: &Cell, dimensions: &(usize, usize)) -> Vec<Option<Ce
 }
 
 fn render(framebuffer: &mut Framebuffer, data: &Model) {
-    // Clear the framebuffer
-    framebuffer.set_background_color(0x333355);
     framebuffer.clear();
 
     // Draw some points
-    framebuffer.set_current_color(0xFFDDDD);
     data.live_cells.iter().for_each(|&(x, y, z)| {
         let _ = framebuffer.paint_point(nalgebra_glm::Vec3::new(x as f32, y as f32, z as f32));
     });
